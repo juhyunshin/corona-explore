@@ -28,7 +28,7 @@ first = as.Date("2020-01-22")
 
 start = 11
 end = as.numeric(ncol(time_series))
-varname <- as.Date(first+1)
+#varname <- as.Date(first+1)
 ts <- time_series
 y <- seq(1,end,1)
 
@@ -38,10 +38,23 @@ for(num in y) if (num <= end - start - 1){
 }
 rm(num)
 new_end = as.numeric(ncol(ts))
-cols1 <- c((end+1):new_end)
-cols2 <- c(1:(start+1))
-cols <- c(cols2,cols1)
-ts2 <- ts[,cols]
+# +1 to include first date where cumulative is incremental
+cols1 <- c(1:(start+1))
+cols2 <- c((end+1):new_end)
+cols <- c(cols1,cols2)
+rm(cols1)
+rm(cols2)
+incr <- ts[,cols]
 
-write.csv(ts2,file=paste0("C:/Users/juhyu/Downloads/corona_explore_",
-                          date,".csv"), row.names = FALSE)
+scols <- c(7,(start+1):end)
+state <- incr[,scols]
+names <- c(colnames(state))
+names <- names[-1]
+state$Province_State <- as.character(as.character(state$Province_State))
+
+state2 <- state %>% group_by(Province_State)
+state2 <- state2 %>% summarise_at(names,sum)
+
+
+#write.csv(ts2,file=paste0("C:/Users/juhyu/Downloads/corona_explore_",
+#                          date,".csv"), row.names = FALSE)
