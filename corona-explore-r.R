@@ -22,13 +22,13 @@ date <- Sys.Date()
 
 time_series <- read.csv("time_series_covid19_confirmed_US.csv")
 
-# 11 identifiers before daily cumulative data starts
-
 first = as.Date("2020-01-22")
+
+# 11 identifiers before daily cumulative data starts
 
 start = 11
 end = as.numeric(ncol(time_series))
-#varname <- as.Date(first+1)
+
 ts <- time_series
 y <- seq(1,end,1)
 
@@ -38,7 +38,7 @@ for(num in y) if (num <= end - start - 1){
 }
 rm(num)
 new_end = as.numeric(ncol(ts))
-# +1 to include first date where cumulative is incremental
+# +1 to include first date where cumulative and incremental is the same
 cols1 <- c(1:(start+1))
 cols2 <- c((end+1):new_end)
 cols <- c(cols1,cols2)
@@ -52,9 +52,12 @@ names <- c(colnames(state))
 names <- names[-1]
 state$Province_State <- as.character(as.character(state$Province_State))
 
+#summarise at state level
 state2 <- state %>% group_by(Province_State)
 state2 <- state2 %>% summarise_at(names,sum)
 
 
-#write.csv(ts2,file=paste0("C:/Users/juhyu/Downloads/corona_explore_",
-#                          date,".csv"), row.names = FALSE)
+write.csv(incr,file=paste0("C:/Users/juhyu/Downloads/corona_all_incremental_",
+                          date,".csv"), row.names = FALSE)
+write.csv(state2,file=paste0("C:/Users/juhyu/Downloads/corona_state_incremental_",
+                           date,".csv"), row.names = FALSE)
