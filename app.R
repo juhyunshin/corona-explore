@@ -1,0 +1,124 @@
+#####Shiny App#####
+library(shiny)
+library(shinydashboard)
+library(shinydashboardPlus)
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+library(rlang)
+library(chron)
+library(scales)
+library(hms)
+
+#setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore")
+nat <- readRDS("National.RDS")
+st <- readRDS("State.RDS")
+
+ui <- dashboardPagePlus(
+  title = "Corona New Cases",
+  header = dashboardHeaderPlus(
+    enable_rightsidebar = TRUE
+  ),
+  sidebar = dashboardSidebar(
+    selectizeInput("level","Level:",
+                   c("National" = "nat",
+                     "State" = "st")),
+    selectizeInput("state","State:",
+                c(levels(nat$Province_State)),
+                selected = "Oregon",
+                multiple = TRUE),
+    numericInput("days","Number of days1:",7,min = 1, max = 30),
+    numericInput("days2", "Number of days2:",14,min = 1, max = 30)
+  ),
+  body = dashboardBody(
+    fluidRow(
+      conditionalPanel(
+        condition = "input.level == 'nat'",
+        boxPlus(
+          title = "County Level New Cases - Table 1",
+          width = 6,
+          closable = FALSE,
+          dataTableOutput("Nat")
+        ),
+        boxPlus(
+          title = "County Level New Cases - Table 2",
+          width = 6,
+          closable = FALSE,
+          dataTableOutput("Nat2")
+        )
+      ),
+      conditionalPanel(
+        condition = "input.level == 'st'",
+        boxPlus(
+          title = "State Level New Cases",
+          width = 12,
+          closable = FALSE,
+          dataTableOutput("St")
+        )
+      )
+    )
+  )
+  )
+
+server <- function(input,output){
+  #Prep Data
+  natldata <- reactive({
+    #days grouping
+    varname1 <- paste0(input$days," Days before Last ",
+                       input$days," Days")
+    nat <- nat %>% 
+      mutate(!!varname1 := rowSums(nat[,c((end-input$days*2+1):(end-input$days))]))
+    #nat <- nat %>% group_by(Province_State) %>%
+    #  mutate(State_Rank1 := min_rank(desc(!!as.name(varname1)))) %>%
+    #  ungroup()
+    #nat <- nat %>%
+    #  mutate(Natl_Rank1 := min_rank(desc(!!as.name(varname1))))
+    
+    varname2 <- paste0("Last ",input$days," Days")
+    nat <- nat %>% 
+      mutate(!!varname2 := rowSums(nat[,c((end-input$days+1):end)]))
+    #nat <- nat %>% group_by(Province_State) %>%
+    #  mutate(State_Rank2 := min_rank(desc(!!as.name(varname2)))) %>%
+    #  ungroup()
+    #nat <- nat %>% 
+    #  mutate(Natl_Rank2 := min_rank(desc(!!as.name(varname2))))
+    
+    nat <- nat %>% #mutate(State_Change = State_Rank1 - State_Rank2) %>%
+      #mutate(Natl_Change = Natl_Rank1 - Natl_Rank2) %>%
+      mutate(!!paste0("increase?") := 
+        round((!!as.name(varname2)) / (!!as.name(varname1)),2)
+        )
+  })
+  
+  natldata2 <- reactive({
+    varname3 <- paste0(input$days2," Days before Last ",
+                       input$days2," Days")
+    nat <- nat %>% 
+      mutate(!!varname3 := rowSums(nat[,c((end-input$days2*2+1):(end-input$days2))]))
+    
+    varname4 <- paste0("Last ",input$days2," Days")
+    nat <- nat %>% 
+      mutate(!!varname4 := rowSums(nat[,c((end-input$days2+1):end)]))
+    
+    nat <- nat %>% mutate(!!paste0("increase?") := 
+      round((!!as.name(varname4)) / (!!as.name(varname4)),2)
+    )
+  })
+  
+  #Renders:
+  output$Nat <- renderDataTable({
+    dat <- natldata() %>% select(Province_State,Admin2,tail(names(.),3)) %>%
+      filter(Province_State %in% input$state)
+  },
+  options = list(searching = FALSE, pageLength = 15)
+  )
+  output$Nat2 <- renderDataTable({
+    dat <- natldata2() %>% select(Province_State,Admin2,tail(names(.),3)) %>%
+      filter(Province_State %in% input$state)
+  },
+  options = list(searching = FALSE, pageLength = 15)
+  )
+}
+
+shinyApp(ui=ui,server=server)

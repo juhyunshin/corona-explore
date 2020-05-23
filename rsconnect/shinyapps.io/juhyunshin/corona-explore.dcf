@@ -1,0 +1,13 @@
+name: corona-explore
+title: corona-explore
+username:
+account: juhyunshin
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2347049
+bundleId: 3182766
+url: https://juhyunshin.shinyapps.io/corona-explore/
+when: 1590270852.68153
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|corona-explore-r.R|National.csv|README.md|State.csv|write_data.R
