@@ -100,31 +100,3 @@ write.csv(incr,file=paste0("C:/Users/juhyu/Downloads/corona_all_incremental_",
                           date,".csv"), row.names = FALSE)
 write.csv(state2,file=paste0("C:/Users/juhyu/Downloads/corona_state_incremental_",
                            date,".csv"), row.names = FALSE)
-
-
-#########Shiny App
-library(shiny)
-ui <- fluidPage(
-  title = "Corona New Cases",
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("level","Level:",
-                  c("National" = "incr",
-                    "State" = "state2")),
-      numericInput("days","Number of days:",7,min = 1, max = 30)
-    ),
-    mainPanel()
-  ),
-  dataTableOutput(outputId = "table")
-)
-server <- function(input,output){
-  data <- reactive({
-    x <- get(input$level)
-  })
-  output$table <- renderDataTable(
-     data()
-  )
-}
-shinyApp(ui=ui,server=server)
-
-
