@@ -1,10 +1,3 @@
-#####Shiny App#####
-library(shiny)
-library(shinydashboard)
-library(shinydashboardPlus)
-library(shinyalert)
-library(DT)
-
 library(ggplot2)
 library(ggthemes)
 library(dplyr)
@@ -13,55 +6,13 @@ library(chron)
 library(scales)
 library(hms)
 
-# does confirmed file include recovered? looks to be negative incremental so i think yes
-#setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/COVID-19/csse_covid_19_data/csse_covid_19_time_series")
-#time_series <- read.csv("time_series_covid19_confirmed_US.csv")
+library(shiny)
+library(shinydashboard)
+library(shinydashboardPlus)
+library(shinyalert)
+library(DT)
 
-ui <- dashboardPagePlus(
-  title = "Corona New Cases",
-  header = dashboardHeaderPlus(
-    enable_rightsidebar = TRUE
-  ),
-  sidebar = dashboardSidebar(
-    selectizeInput("level","Level:",
-                   c("National" = "nat",
-                     "State" = "st")),
-    uiOutput("state_input"),
-    numericInput("days","Number of days1:",7,min = 1, max = 30),
-    numericInput("days2", "Number of days2:",14,min = 1, max = 30)
-  ),
-  body = dashboardBody(
-    fluidRow(
-      conditionalPanel(
-        condition = "input.level == 'nat'",
-        boxPlus(
-          title = "County Level New Cases - Table 1",
-          width = 6,
-          closable = FALSE,
-          dataTableOutput("Nat")
-        ),
-        boxPlus(
-          title = "County Level New Cases - Table 2",
-          width = 6,
-          closable = FALSE,
-          dataTableOutput("Nat2")
-        )
-      ),
-      conditionalPanel(
-        condition = "input.level == 'st'",
-        boxPlus(
-          title = "State Level New Cases",
-          width = 12,
-          closable = FALSE,
-          dataTableOutput("St")
-        )
-      )
-    )
-  )
-  )
-
-server <- function(input,output){
-  #setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore")
+function(input,output){
   time_series <- read.csv("time_series_covid19_confirmed_US.csv")
   
   first = as.Date("2020-01-22")
@@ -95,9 +46,9 @@ server <- function(input,output){
   end_st = as.numeric(ncol(state))
   
   nat <- incr
-  
-  ######Prep Data######
+  #Prep Data
   natldata <- reactive({
+    #nat <- read.csv("National.csv")
     #days grouping
     varname1 <- paste0(input$days," Days before Last ",
                        input$days," Days")
@@ -121,11 +72,12 @@ server <- function(input,output){
     nat <- nat %>% #mutate(State_Change = State_Rank1 - State_Rank2) %>%
       #mutate(Natl_Change = Natl_Rank1 - Natl_Rank2) %>%
       mutate(!!paste0("increase?") := 
-        round((!!as.name(varname2)) / (!!as.name(varname1)),2)
-        )
+               round((!!as.name(varname2)) / (!!as.name(varname1)),2)
+      )
   })
   
   natldata2 <- reactive({
+    #nat <- read.csv("National.csv")
     varname3 <- paste0(input$days2," Days before Last ",
                        input$days2," Days")
     nat <- nat %>% 
@@ -136,7 +88,7 @@ server <- function(input,output){
       mutate(!!varname4 := rowSums(nat[,c((end-input$days2+1):end)]))
     
     nat <- nat %>% mutate(!!paste0("increase?") := 
-      round((!!as.name(varname4)) / (!!as.name(varname4)),2)
+                            round((!!as.name(varname4)) / (!!as.name(varname4)),2)
     )
   })
   
@@ -160,5 +112,3 @@ server <- function(input,output){
   options = list(searching = FALSE, pageLength = 15)
   )
 }
-
-shinyApp(ui=ui,server=server)

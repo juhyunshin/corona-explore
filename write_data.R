@@ -16,6 +16,9 @@ library(DT)
 # does confirmed file include recovered? looks to be negative incremental so i think yes
 setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/COVID-19/csse_covid_19_data/csse_covid_19_time_series")
 time_series <- read.csv("time_series_covid19_confirmed_US.csv")
+setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore")
+write.csv(time_series,file=paste0("time_series_covid19_confirmed_US.csv"),
+          row.names = FALSE)
 
 first = as.Date("2020-01-22")
 
@@ -52,7 +55,8 @@ end_st = as.numeric(ncol(state))
 setwd("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore")
 saveRDS(incr,"National.RDS")
 saveRDS(state,"State.RDS")
-write.csv(incr,file=paste0("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore",
+write.csv(incr,file=paste0("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore/rsconnect/shinyapps.io/juhyunshin",
                            "/National.csv"), row.names = FALSE)
 write.csv(state,file=paste0("C:/Users/juhyu/OneDrive/Documents/Documents/udacity-git-course/corona-explore",
                              "/State.csv"), row.names = FALSE)
+write.csv(time_series,file=paste0("time_series_covid19_confirmed_US.csv"))
