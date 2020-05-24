@@ -123,6 +123,7 @@ function(input,output){
   output$Nat <- renderDataTable({
     dat <- natldata() %>% select(State,County,tail(names(.),4)) %>%
       filter(State %in% input$state)
+    dat <- dat %>% arrange(desc(dat[,4]))
   },
   options = list(searching = FALSE, pageLength = 15)
   )
@@ -149,7 +150,9 @@ function(input,output){
   
   output$St <- renderDataTable({
     dat <- stdata() %>% select(State, tail(names(.),4))
-  })
+    dat <- dat %>% arrange(desc(dat[,3]))
+  },
+  options = list(searching = FALSE, pageLength = 15))
   output$St_chart <- renderPlotly({
     dat <- stdata() %>% select(State, tail(names(.),4))
     
