@@ -5,9 +5,9 @@ account: juhyunshin
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2347474
-bundleId: 3185938
+bundleId: 3187814
 url: https://juhyunshin.shinyapps.io/corona-explore2/
-when: 1590373887.18103
+when: 1590419642.33425
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .RData|app.R|corona-explore-r.R|global.R|National.csv|National.RDS|README.md|State.csv|State.RDS|write_data.R

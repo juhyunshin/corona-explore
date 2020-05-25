@@ -64,7 +64,7 @@ function(input,output){
   
   nat <- incr
   
-  #Prep Data
+  ##############################Data Prep
   natldata <- reactive({
     #nat <- read.csv("National.csv")
     #days grouping
@@ -145,7 +145,7 @@ function(input,output){
     ))
   })
   
-  #Renders:
+  #################Renders:
 
   output$state_input <- renderUI({
     selectizeInput("state","State:",
@@ -173,24 +173,29 @@ function(input,output){
     sdat <- sdat %>% rename(Level = State)
     
     bind <- rbind(ndat,sdat)
-    bind[,2] <- as.integer(as.integer(bind[,2]))
-    bind[,3] <- as.integer(as.integer(bind[,3]))
+    bind[,2] <- format(as.integer(as.integer(bind[,2])),big.mark = ",")
+    bind[,3] <- format(as.integer(as.integer(bind[,3])),big.mark = ",")
     bind <- as.data.frame(bind)
-  })
+  },
+  align = "r")
   output$All2 <- renderTable({
     ndat <- alldata() %>% select(Country,tail(names(.),4))
     ndat <- ndat %>% rename(Level = Country)
 
-    ndat[,2] <- as.integer(as.integer(ndat[,2]))
-    ndat[,3] <- as.integer(as.integer(ndat[,3]))
+    ndat[,2] <- format(as.integer(as.integer(ndat[,2])),big.mark = ",")
+    ndat[,3] <- format(as.integer(as.integer(ndat[,3])),big.mark = ",")
     ndat <- as.data.frame(ndat)
-  })
+  },
+  align = "r")
   output$Nat <- renderDataTable({
     dat <- natldata() %>% select(State,County,tail(names(.),4)) %>%
       filter(State %in% input$state)
-    dat <- dat %>% arrange(desc(dat[,4]))
+    dat <- dat %>% arrange(desc(dat[,4])) %>% 
+      format(dat[,3],big.mark = ",") %>%
+      format(dat[,4],big.mark = ",")
   },
-  options = list(searching = FALSE, pageLength = 15)
+  options = list(searching = FALSE, pageLength = 15,
+                 columnDefs = list(list(targets = 3:5, class = "dt-right")))
   )
   output$Nat_chart <- renderPlotly({
     dat <- natldata() %>% select(State,County,tail(names(.),4)) %>%
@@ -219,9 +224,13 @@ function(input,output){
   
   output$St <- renderDataTable({
     dat <- stdata() %>% select(State, tail(names(.),4))
-    dat <- dat %>% arrange(desc(dat[,3]))
+    dat <- dat %>% arrange(desc(dat[,3])) %>% 
+      format(dat[,2],big.mark = ",") %>%
+      format(dat[,3],big.mark = ",")
   },
-  options = list(searching = FALSE, pageLength = 15))
+  options = list(searching = FALSE, pageLength = 15,
+                 columnDefs = list(list(targets = 2:4, class = "dt-right")))
+  )
   output$St_chart <- renderPlotly({
     dat <- stdata() %>% select(State, tail(names(.),4))
     
