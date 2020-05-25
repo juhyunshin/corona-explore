@@ -5,6 +5,7 @@ library(rlang)
 library(chron)
 library(scales)
 library(hms)
+library(crayon)
 
 library(shiny)
 library(shinydashboard)
@@ -37,6 +38,8 @@ function(input,output){
   #incremental data table
   incr <- time_series[,cols]
   incr <- incr %>% arrange(incr$State)
+  date <- as.Date(tail(names(incr),1))
+  update <- Sys.Date()
   
   #state level
   state <- incr[,c(7,(start+1):end)]
@@ -48,6 +51,16 @@ function(input,output){
   state$State <- as.factor(as.factor(state$State))
   state <- as.data.frame(state)
   end_st = as.numeric(ncol(state))
+  
+  all <- incr[,c(8,(start+1):end)]
+  all <- all %>% rename(Country = Country_Region) %>%
+    mutate(Country = "USA")
+  names_all <- c(colnames(all))
+  names_all <- names_all[-1]
+  all <- all %>% group_by(Country) %>%
+    summarise_at(names_all,sum)
+  all <- as.data.frame(all)
+  end_all = as.numeric(ncol(all))
   
   nat <- incr
   
@@ -112,13 +125,65 @@ function(input,output){
     ))
   })
   
+  alldata <- reactive({
+    varname1 <- paste0(input$days," Days before Last ",
+                       input$days," Days")
+    all <- all %>%
+      mutate(!!varname1 := round(rowSums(all[,c((end_st-input$days*2+1):(end_st-input$days))]),0))
+    varname2 <- paste0("Last ",input$days," Days")
+    all <- all %>%
+      mutate(!!varname2 := round(rowSums(all[,c((end_st-input$days+1):end_st)]),0))
+    all <- all %>%
+      mutate(Change := round((!!as.name(varname2)) / (!!as.name(varname1)),2))
+    all <- all %>% mutate(Indicator = case_when(
+      Change < 0 ~ "More recoveries than new cases",
+      Change >= 0 & Change <= 0.5 ~ "Significant improvement",
+      Change > 0.5 & Change <= 0.85 ~ "Gradual improvement",
+      Change > 0.85 & Change <= 1.25 ~ "No change",
+      Change > 1.25 & Change <= 2 ~ "Deterioration",
+      Change > 2 ~ "Significant deterioration"
+    ))
+  })
+  
   #Renders:
 
   output$state_input <- renderUI({
     selectizeInput("state","State:",
                    c(levels(nat$State)),
                    selected = "Oregon",
-                   multiple = TRUE)
+                   multiple = FALSE)
+  })
+  output$text <- renderUI({
+    h3(paste0("New Cases of COVID-19 using data through ",
+              date))
+    
+  })
+  output$text2 <- renderUI({
+    varname1 <- paste0(input$days," Days before Last ",
+                       input$days," Days")
+    varname2 <- paste0("Last ",input$days," Days")
+    p(paste0("Change = [",varname2,"] / [",varname1,"]"))
+  })
+  output$All <- renderTable({
+    ndat <- alldata() %>% select(Country,tail(names(.),4))
+    ndat <- ndat %>% rename(Level = Country)
+    
+    sdat <- stdata() %>% select(State,tail(names(.),4)) %>%
+      filter(State %in% input$state)
+    sdat <- sdat %>% rename(Level = State)
+    
+    bind <- rbind(ndat,sdat)
+    bind[,2] <- as.integer(as.integer(bind[,2]))
+    bind[,3] <- as.integer(as.integer(bind[,3]))
+    bind <- as.data.frame(bind)
+  })
+  output$All2 <- renderTable({
+    ndat <- alldata() %>% select(Country,tail(names(.),4))
+    ndat <- ndat %>% rename(Level = Country)
+
+    ndat[,2] <- as.integer(as.integer(ndat[,2]))
+    ndat[,3] <- as.integer(as.integer(ndat[,3]))
+    ndat <- as.data.frame(ndat)
   })
   output$Nat <- renderDataTable({
     dat <- natldata() %>% select(State,County,tail(names(.),4)) %>%
@@ -134,17 +199,21 @@ function(input,output){
     dat <- dat %>% arrange(desc(dat[,4]))
     dat <- dat[,c(1:4)]
     dat2 <- head(dat,15)
-    dat2 <- dat2 %>% arrange(dat2[,4])
+    #dat2 <- dat2 %>% arrange(dat2[,4])
     
     nchart <- plot_ly(dat2)
     nchart <- nchart %>% 
-      add_trace(dat2, x = dat2[,3], y = dat2$County, 
-                yaxis = list(type = 'category'), type = 'bar',
+      add_trace(dat2, y = dat2[,4], x = dat2$County,
+                xaxis = list(type = 'category'), type = 'bar',
+                name = paste0("Last ",input$days," Days"),
+                color = c("#8BBEE8")) %>%
+      add_trace(dat2, y = dat2[,3], x = dat2$County, 
+                xaxis = list(type = 'category'), type = 'bar',
                 name = paste0(input$days," Days before Last ",
-                              input$days," Days")) %>%
-      add_trace(dat2, x = dat2[,4], y = dat2$County,
-                yaxis = list(type = 'category'), type = 'bar',
-                name = paste0("Last ",input$days," Days"))
+                              input$days," Days"),
+                color = c("#A8D5BA")) %>%
+      layout(legend = list(x = 0.65, y = 0.9)) %>%
+      config(displayModeBar = FALSE)
 
   })
   
@@ -159,16 +228,20 @@ function(input,output){
     dat <- dat %>% arrange(desc(dat[,3]))
     dat <- dat[,c(1:3)]
     dat2 <- head(dat,15)
-    dat2 <- dat2 %>% arrange(dat2[,3])
+    #dat2 <- dat2 %>% arrange(dat2[,3])
     
     schart <- plot_ly(dat2)
     schart <- schart %>% 
-      add_trace(dat2, x = dat2[,2], y = dat2$State,
-                yaxis = list(type = 'category'), type = 'bar',
+      add_trace(dat2, y = dat2[,3], x = dat2$State,
+                xaxis = list(type = 'category'), type = 'bar',
+                name = paste0("Last ",input$days," Days"),
+                color = c("#8BBEE8")) %>%
+      add_trace(dat2, y = dat2[,2], x = dat2$State,
+                xaxis = list(type = 'category'), type = 'bar',
                 name = paste0(input$days," Days before Last ",
-                              input$days," Days")) %>%
-      add_trace(dat2, x = dat2[,3], y = dat2$State,
-                yaxis = list(type = 'category'), type = 'bar',
-                name = paste0("Last ",input$days," Days"))
+                              input$days," Days"),
+                color = c("#A8D5BA")) %>%
+      layout(legend = list(x = 0.65, y = 0.9)) %>%
+      config(displayModeBar = FALSE)
   })
 }
